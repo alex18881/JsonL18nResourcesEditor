@@ -15,7 +15,7 @@ Usage
 
 ![Screenshot](http://i.imgur.com/tfF6IOR.png)
 
-  - Right click on one of any sequence of resources JSON files in sidebar. ( Sequence of JSON resources is a number of JSON files located in the same directory with similar names ie resources.json, resources.en-us.json, resources.en-gb.json )
+  - Right click on one of any file from sequence of JSON resources files in sidebar. ( Sequence of JSON resources is a number of JSON files located in the same directory with similar names ie resources.json, resources.en-us.json, resources.en-gb.json )
   - Select "Edit L18n resource" in context menu.
   - Edit ersources as JSON strings in opened window.
 
