@@ -1,0 +1,15 @@
+[
+	{
+		"caption": "-",
+		"id": "side-bar-end-separator"
+	},
+	{
+		"caption": "Edit L18n resource",
+		"command": "json_l18n",
+		"args": { "paths": [] }
+	},
+	{
+		"caption": "-",
+		"id": "side-bar-end-separator"
+	}
+]
