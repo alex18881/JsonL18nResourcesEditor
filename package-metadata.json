@@ -1,0 +1,8 @@
+{
+	"dependencies": [],
+	"url": "https://github.com/alex18881/JsonL18nResourcesEditor",
+	"description": "A SublimeText plugin for editing localization resorces in JSON format",
+	"version": "1.0.0",
+	"sublime_text": ">=3000",
+	"platforms": ["*"]
+}
