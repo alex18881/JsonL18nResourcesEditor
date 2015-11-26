@@ -65,7 +65,7 @@ class L18ionSetViewPos( sublime_plugin.TextCommand ):
 			lines = lines + ([lineContent] * newLineCount)
 			self.view.replace( edit, selection, "\n".join(lines) )
 		
-		print( currentrow )
+		#print( currentrow )
 		pt = view.text_point(currentrow,0)
 		view.sel().clear()
 		view.sel().add( sublime.Region(pt) )
