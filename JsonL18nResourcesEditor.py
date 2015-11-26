@@ -25,7 +25,7 @@ class JSONSaver( sublime_plugin.EventListener ):
 			elif view_i == view:
 				result = {}
 				for key_indx, key in enumerate(keys):
-					if key_indx < len(lines) and lines[key_indx]:
+					if key_indx < len(lines) and lines[key_indx] and len(key) > 0:
 						result[key] = json.loads(lines[key_indx])
 				
 				view_i.settings().set( "l18ion_view_content", content )
@@ -51,6 +51,25 @@ class L18ionSaveCommand( sublime_plugin.TextCommand ):
 	def run( self, edit, content='', jsonresult="" ):
 		selection = sublime.Region( 0, self.view.size() )
 		self.view.replace( edit, selection, jsonresult )
+
+
+class L18ionSetViewPos( sublime_plugin.TextCommand ):
+	def run( self, edit, currentrow=0 ):
+		view = self.view
+		selection = sublime.Region( 0, view.size() )
+		lines = view.substr( selection ).splitlines()
+		newLineCount = 1+currentrow - len(lines)
+
+		if newLineCount > 0:
+			lineContent = "" if view.settings().get( "l18ion_keysview", False ) else '""'
+			lines = lines + ([lineContent] * newLineCount)
+			self.view.replace( edit, selection, "\n".join(lines) )
+		
+		print( currentrow )
+		pt = view.text_point(currentrow,0)
+		view.sel().clear()
+		view.sel().add( sublime.Region(pt) )
+
 
 class JsonL18nCommand(sublime_plugin.TextCommand):
 	def run(self, edit, **args):
@@ -109,7 +128,7 @@ class JsonL18nCommand(sublime_plugin.TextCommand):
 
 		for view in views:
 			if not view.settings().get( "l18ion_keysview", False ):
-				print( str(isloading) )
+				#print( str(isloading) )
 				isloading = isloading or view.is_loading()
 
 		if isloading:
@@ -159,7 +178,7 @@ class ViewSyncer( object ):
 		self.timeout_focused = 10
 		self.timeout_unfocused = 50
 		
-		self.run()
+		self.sync()
 		
 	def update_pos( self, lastUpdatedIndx, position, rowViewIndex, rowindx ):
 		for indx, view in enumerate(self.window.views()):
@@ -173,19 +192,14 @@ class ViewSyncer( object ):
 				view.settings().set( 'l18ion_view_prev_row', rowindx )
 				
 				if indx != rowViewIndex:
-					pt = view.text_point(rowindx,0)
-					view.sel().clear()
-					view.sel().add( sublime.Region(pt) )
+					view.run_command( 'l18ion_set_view_pos', { "currentrow": rowindx } )
 
-	def run( self ):
-		self.init_sync()
-
-	def init_sync(self):
+	def sync(self):
 		if not self.window:
 			return
 		
 		if self.window.id() != sublime.active_window().id():
-			sublime.set_timeout( self.init_sync, self.timeout_unfocused )
+			sublime.set_timeout( self.sync, self.timeout_unfocused )
 			return
 		
 		scrollindx = -1
@@ -213,4 +227,4 @@ class ViewSyncer( object ):
 		if scrollindx > -1 or rowindex > -1:
 			self.update_pos( scrollindx, scrollpos, rowindex, currrow )
 		
-		sublime.set_timeout( self.init_sync, self.timeout_focused )
+		sublime.set_timeout( self.sync, self.timeout_focused )
