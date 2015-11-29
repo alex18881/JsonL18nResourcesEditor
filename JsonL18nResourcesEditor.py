@@ -7,6 +7,9 @@ import fnmatch
 def jsonencode(str):
 	return json.dumps(str, sort_keys=False, ensure_ascii=False, indent=4, separators=(',', ': '))
 
+def get_settings():
+	return sublime.load_settings( 'JsonL18nResourcesEditor.sublime-settings' )
+
 class JSONSaver( sublime_plugin.EventListener ):
 	def on_pre_save(self, view):
 		if not view.settings().get( 'l18ion_view', False ):
@@ -72,9 +75,18 @@ class L18ionSetViewPos( sublime_plugin.TextCommand ):
 
 
 class JsonL18nCommand(sublime_plugin.TextCommand):
+	
 	def run(self, edit, **args):
 		paths = args.get('paths', None)
-		if paths:
+
+		if not paths and self.view:
+			if self.view.file_name():
+				paths = [ self.view.file_name() ]
+			elif self.view.name():
+				paths = [ self.view.name() ]
+
+		#print( paths )
+		if paths and len( paths ) > 0:
 			filepaths = self.get_files(paths[0])
 			if filepaths and len(filepaths) > 0:
 				self.make_views(filepaths); #.insert(edit, 0, json.JSONEncoder().encode(filepaths))
@@ -84,11 +96,8 @@ class JsonL18nCommand(sublime_plugin.TextCommand):
 		ptrn = ""
 		#str.join(iterable)
 		#files = 
-		if len(parts) > 1:
-			ptrn = "".join([parts[0], "*.",parts[len(parts)-1]])
-		else:
-			ptrn = "".join([parts[0], "*."])
-
+		ptrn = get_settings().get("resources_pattern", "").format( basename=parts[0], ext= "" if len(parts) <= 1 else parts[len(parts)-1])
+		#print( ptrn )
 		if ptrn:
 			dirpath = os.path.dirname(basepath)
 			return [os.path.join( dirpath, p ) for p in fnmatch.filter(os.listdir(dirpath), ptrn)]
@@ -195,7 +204,7 @@ class ViewSyncer( object ):
 					view.run_command( 'l18ion_set_view_pos', { "currentrow": rowindx } )
 
 	def sync(self):
-		if not self.window:
+		if not self.window or not sublime:
 			return
 		
 		if self.window.id() != sublime.active_window().id():

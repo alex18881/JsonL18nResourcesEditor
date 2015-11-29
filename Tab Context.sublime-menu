@@ -1,0 +1,9 @@
+[
+	{
+		"caption": "-"
+	},
+	{
+		"caption": "Edit L18n resource",
+		"command": "json_l18n"
+	}
+]
