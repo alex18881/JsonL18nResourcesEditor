@@ -31,7 +31,7 @@ Resulting saved files will be pretty-print-formatted.
 
 P.S.
 ---
-Please leave comments [here]()
+#Please leave comments [here]()
 Feel free to post [issues](https://github.com/alex18881/JsonL18nResourcesEditor/issues)
 
 Changes in 1.1.0:
