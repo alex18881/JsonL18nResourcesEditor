@@ -44,16 +44,41 @@ class JSONSaver( sublime_plugin.EventListener ):
 		view.settings().set( 'l18ion_view', True )
 		view.run_command( "l18ion_restore_view", { "content": content } )
 
-class L18ionRestoreViewCommand( sublime_plugin.TextCommand ):
+class L18ionRestoreView( sublime_plugin.TextCommand ):
 	def run( self, edit, content='' ):
 		selection = sublime.Region( 0, self.view.size() )
 		self.view.replace( edit, selection, content )
 
 
-class L18ionSaveCommand( sublime_plugin.TextCommand ):
+class L18ionSave( sublime_plugin.TextCommand ):
 	def run( self, edit, content='', jsonresult="" ):
 		selection = sublime.Region( 0, self.view.size() )
 		self.view.replace( edit, selection, jsonresult )
+
+class L18ionViewTab( sublime_plugin.TextCommand ):
+	def run( self, edit, **args ):
+		if not self.view.settings().get( 'l18ion_view', False ):
+			return
+
+		dir = args.get('direction', None)
+
+		if not dir:
+			print("No direction")
+			return
+
+		win = self.view.window()
+		viewindx = win.get_view_index(self.view)
+		
+		if viewindx == -1 or viewindx[0] == -1 or viewindx[1] == -1:
+			return
+
+		nextindx = viewindx[0] + (1 if dir=="right" else -1);
+		
+		if nextindx >= 0 and nextindx < len(win.views()):
+			for view in win.views():
+				if win.get_view_index(view)[0] == nextindx:
+					win.focus_view( view )
+		
 
 
 class L18ionSetViewPos( sublime_plugin.TextCommand ):
@@ -73,7 +98,8 @@ class L18ionSetViewPos( sublime_plugin.TextCommand ):
 		view.sel().clear()
 		view.sel().add( sublime.Region(pt) )
 
-
+#TODO: Use syntax file to make files editable
+#TODO: Make multiline editor in popup
 class JsonL18nCommand(sublime_plugin.TextCommand):
 	
 	def run(self, edit, **args):
@@ -176,7 +202,7 @@ class JsonL18nCommand(sublime_plugin.TextCommand):
 
 		#view.set_name( filePath if indx == 0 else os.path.basename( filePath ) )
 		view.set_viewport_position( (0, 0), False )
-		view.settings().set( 'l18ion_view_file_path', filePath )
+		#view.settings().set( 'l18ion_view_file_path', filePath )
 		view.settings().set( 'l18ion_view', True )
 		view.set_scratch( True )
 		return view

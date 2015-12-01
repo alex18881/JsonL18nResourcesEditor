@@ -1,0 +1,16 @@
+[
+	{
+		"keys": ["tab"], "command": "l18ion_view_tab",
+		"context": [
+			{"key": "setting.l18ion_view", "operand": true}
+		],
+		"args": {"direction": "right"}
+	},
+	{
+		"keys": ["shift+tab"], "command": "l18ion_view_tab",
+		"context": [
+			{"key": "setting.l18ion_view", "operand": true}
+		],
+		"args": {"direction": "left"}
+	}
+]
