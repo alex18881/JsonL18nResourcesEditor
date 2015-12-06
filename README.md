@@ -25,6 +25,10 @@ resources.en-gb.json
   - Edit resources as JSON strings in opened window.
   - Use TAB and SHIFT+TAB to shitch between languages
 
+![Multiple rows strings editor](http://i.imgur.com/M458Ylx.png)
+
+If you need to make a multiline string which should contain "\n" symbols just press _CTRL+Enter_ to enter into multiline editor there to make new line use SHIFT+Enter, and to apply changes just hit _Enter_
+
 *Note that each value should be a proper single line JSON string. All special chars must be escaped.
 Resulting saved files will be pretty-print-formatted.*
 
@@ -37,6 +41,8 @@ Feel free to post [issues](https://github.com/alex18881/JsonL18nResourcesEditor/
 ###1.2.0:
 
 - added jump to next lang resource by tab press and previous by shift+tab
+- added multiline strings editing by CTRL+Enter
+- row adding fixed
 
 ###1.1.1:
 - fugfix

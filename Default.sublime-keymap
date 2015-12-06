@@ -1,16 +1,54 @@
 [
 	{
-		"keys": ["tab"], "command": "l18ion_view_tab",
+		"keys": ["ctrl+s"], "command": "l18ion_void",
 		"context": [
-			{"key": "setting.l18ion_view", "operand": true}
-		],
-		"args": {"direction": "right"}
+			{"key": "setting.l18ion_keysview", "operand": true}
+		]
 	},
 	{
-		"keys": ["shift+tab"], "command": "l18ion_view_tab",
+		"keys": ["ctrl+w"], "command": "l18ion_void",
+		"context": [
+			{"key": "setting.l18ion_view", "operand": true}
+		]
+	},
+	{
+		"keys": ["ctrl+shift+enter"], "command": "l18ion_void",
+		"context": [
+			{"key": "setting.l18ion_view", "operand": true}
+		]
+	},
+	{
+		"keys": ["shift+enter"], "command": "l18ion_void",
+		"context": [
+			{"key": "setting.l18ion_view", "operand": true}
+		]
+	},
+	{
+		"keys": ["enter"], "command": "l18ion_view_exec",
 		"context": [
 			{"key": "setting.l18ion_view", "operand": true}
 		],
-		"args": {"direction": "left"}
+		"args": {"cmd": "add_row"}
+	},
+	{
+		"keys": ["ctrl+enter"], "command": "l18ion_view_exec",
+		"context": [
+			{"key": "setting.l18ion_view", "operand": true}
+		],
+		"args": {"cmd": "open_multiline_editor"}
+	},
+	{
+		"keys": ["tab"], "command": "l18ion_view_exec",
+		"context": [
+			{"key": "setting.l18ion_view", "operand": true}
+		],
+		"args": {"cmd": "tab", "direction": "right"}
+	},
+	{
+		"keys": ["shift+tab"], "command": "l18ion_view_exec",
+		"context": [
+			{"key": "setting.l18ion_view", "operand": true}
+		],
+		"args": {"cmd": "tab", "direction": "left"}
 	}
 ]

@@ -10,6 +10,10 @@ def jsonencode(str):
 def get_settings():
 	return sublime.load_settings( 'JsonL18nResourcesEditor.sublime-settings' )
 
+def get_view_content(view):
+	selection = sublime.Region( 0, view.size() )
+	return view.substr( selection )
+
 class JSONSaver( sublime_plugin.EventListener ):
 	def on_pre_save(self, view):
 		if not view.settings().get( 'l18ion_view', False ):
@@ -19,11 +23,10 @@ class JSONSaver( sublime_plugin.EventListener ):
 		views = win.views()
 		keys  = []
 		for indx, view_i in enumerate(views):
-			selection = sublime.Region( 0, view_i.size() )
-			content = view_i.substr( selection )
+			content = get_view_content( view_i )
 			lines = content.splitlines()
 
-			if indx == 0:
+			if view_i.settings().get( "l18ion_keysview", False ):
 				keys = lines
 			elif view_i == view:
 				result = {}
@@ -42,9 +45,9 @@ class JSONSaver( sublime_plugin.EventListener ):
 		content = view.settings().get( "l18ion_view_content", "" )
 		view.settings().erase( "l18ion_view_content" )
 		view.settings().set( 'l18ion_view', True )
-		view.run_command( "l18ion_restore_view", { "content": content } )
+		view.run_command( "l18ion_set_view_content", { "content": content } )
 
-class L18ionRestoreView( sublime_plugin.TextCommand ):
+class L18ionSetViewContent( sublime_plugin.TextCommand ):
 	def run( self, edit, content='' ):
 		selection = sublime.Region( 0, self.view.size() )
 		self.view.replace( edit, selection, content )
@@ -55,15 +58,55 @@ class L18ionSave( sublime_plugin.TextCommand ):
 		selection = sublime.Region( 0, self.view.size() )
 		self.view.replace( edit, selection, jsonresult )
 
-class L18ionViewTab( sublime_plugin.TextCommand ):
+class L18ionVoid( sublime_plugin.TextCommand ):
+	def run( self, edit ):
+		return
+
+class L18ionInsetRow( sublime_plugin.TextCommand ):
+	def run( self, edit, index=0, iscurrent=False ):
+		if not self.view.settings().get( 'l18ion_view', False ):
+			return
+
+		isKey = self.view.settings().get( "l18ion_keysview", False )
+
+		endOfLine = self.view.line(self.view.text_point(index,0)).end()
+		self.view.insert( edit, endOfLine, "\n" if isKey else '\n""')
+
+class L18nUpdateRow( sublime_plugin.TextCommand ):
+	def run( self, edit, value="" ):
+		view = self.view
+		view.replace( edit, view.line(view.sel()[0].begin()), jsonencode( value ) )
+
+
+class L18ionViewExec( sublime_plugin.TextCommand ):
 	def run( self, edit, **args ):
 		if not self.view.settings().get( 'l18ion_view', False ):
 			return
 
-		dir = args.get('direction', None)
+		cmd = args.get( "cmd", None )
 
+		if not cmd:
+			return
+
+		if cmd == "tab":
+			self.switch_tab( args.get('direction', None) )
+		elif cmd == "open_multiline_editor":
+			self.open_ml_editor( edit )
+		elif cmd == "add_row":
+			self.add_row( edit )
+
+#TODO: finish adding rows in the middle
+	def add_row( self, edit ):
+		rowPos = self.view.rowcol(self.view.sel()[0].begin())[0]
+		#self.view.settings().get( 'l18ion_view_active_row', rowPos )
+		views = self.view.window().views()
+
+		for view_i in views:
+			view_i.run_command( "l18ion_inset_row", { "index": rowPos, "iscurrent": self.view == view_i } )
+
+
+	def switch_tab(self, dir):
 		if not dir:
-			print("No direction")
 			return
 
 		win = self.view.window()
@@ -78,7 +121,22 @@ class L18ionViewTab( sublime_plugin.TextCommand ):
 			for view in win.views():
 				if win.get_view_index(view)[0] == nextindx:
 					win.focus_view( view )
-		
+
+#TODO: finish editing multiline rows
+	def open_ml_editor(self, edit):
+		view = self.view
+		text = view.substr( view.line(view.sel()[0].begin()) )
+		view.window().show_input_panel( "", json.loads( text ), lambda nw: self.on_ml_done( edit, nw ), self.on_ml_change, self.on_ml_cancel )
+
+	def on_ml_done(self, edit, newVal):
+		self.view.run_command( "l18n_update_row", { "value": newVal } )
+		#print( newVal )
+
+	def on_ml_change(self, newVal):
+		print( newVal )
+
+	def on_ml_cancel( self ):
+		print( "ML editor cancelled" )
 
 
 class L18ionSetViewPos( sublime_plugin.TextCommand ):
@@ -88,18 +146,17 @@ class L18ionSetViewPos( sublime_plugin.TextCommand ):
 		lines = view.substr( selection ).splitlines()
 		newLineCount = 1+currentrow - len(lines)
 
-		if newLineCount > 0:
-			lineContent = "" if view.settings().get( "l18ion_keysview", False ) else '""'
-			lines = lines + ([lineContent] * newLineCount)
-			self.view.replace( edit, selection, "\n".join(lines) )
+		# if newLineCount > 0:
+		# 	lineContent = "" if view.settings().get( "l18ion_keysview", False ) else '""'
+		# 	lines = lines + ([lineContent] * newLineCount)
+		# 	self.view.replace( edit, selection, "\n".join(lines) )
 		
 		#print( currentrow )
 		pt = view.text_point(currentrow,0)
 		view.sel().clear()
 		view.sel().add( sublime.Region(pt) )
 
-#TODO: Use syntax file to make files editable
-#TODO: Make multiline editor in popup
+#TODO: Findout how to make files editable
 class JsonL18nCommand(sublime_plugin.TextCommand):
 	
 	def run(self, edit, **args):
@@ -155,9 +212,9 @@ class JsonL18nCommand(sublime_plugin.TextCommand):
 			newwin.set_view_index( view, indx+1, 0 )
 
 
-		self.get_views_contens( newwin, files )
+		self.make_view_content( newwin, files )
 
-	def get_views_contens(self, win, files):
+	def make_view_content(self, win, files):
 		isloading = False
 		views = win.views()
 
@@ -167,9 +224,9 @@ class JsonL18nCommand(sublime_plugin.TextCommand):
 				isloading = isloading or view.is_loading()
 
 		if isloading:
-			sublime.set_timeout( lambda: self.get_views_contens( win, files ), 10 )
+			sublime.set_timeout( lambda: self.make_view_content( win, files ), 10 )
 		else:
-			jsons = [ self.get_view_content(win, view_i) for view_i in views if not view_i.settings().get( "l18ion_keysview", False ) ]
+			jsons = [ json.loads( get_view_content(view_i) ) for view_i in views if not view_i.settings().get( "l18ion_keysview", False ) ]
 			#print( json.JSONEncoder().encode(jsons) )
 			keys = {};
 			for dict in jsons:
@@ -182,12 +239,6 @@ class JsonL18nCommand(sublime_plugin.TextCommand):
 				self.render_content( win, keys, dict, indx+1, files[indx] )
 			
 			ViewSyncer( win )
-				
-
-	def get_view_content( self, win, view ):
-		selection = sublime.Region( 0, view.size() )
-		content = view.substr( selection )
-		return json.loads( content )
 
 	def render_content(self, win, keys, dict, indx, filePath):
 		view = win.views()[indx]
@@ -198,7 +249,7 @@ class JsonL18nCommand(sublime_plugin.TextCommand):
 		else:
 			content = "\n".join([ jsonencode(dict.get(key, "")) for key in keys ])
 
-		view.run_command( 'l18ion_restore_view', { 'content': content } )
+		view.run_command( 'l18ion_set_view_content', { 'content': content } )
 
 		#view.set_name( filePath if indx == 0 else os.path.basename( filePath ) )
 		view.set_viewport_position( (0, 0), False )
@@ -224,7 +275,7 @@ class ViewSyncer( object ):
 					view.set_viewport_position( (0.0,position), False )
 
 			if rowViewIndex > -1:
-				view.settings().set( 'l18ion_view_prev_row', rowindx )
+				view.settings().set( 'l18ion_view_active_row', rowindx )
 				
 				if indx != rowViewIndex:
 					view.run_command( 'l18ion_set_view_pos', { "currentrow": rowindx } )
@@ -249,7 +300,7 @@ class ViewSyncer( object ):
 
 			scrollPrevPosY = view.settings().get( 'l18ion_view_prev_scroll', 1 )
 
-			prevRow = view.settings().get( 'l18ion_view_prev_row', 1 )
+			prevRow = view.settings().get( 'l18ion_view_active_row', 1 )
 
 			if prevRow != rowPos:
 				rowindex = indx
