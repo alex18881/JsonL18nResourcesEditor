@@ -1,5 +1,6 @@
 #Json L18n Resources Editor
-_Sublime Text 3 plugin for editing localization internationalization resources JSON_
+_Sublime Text 3 plugin for editing localization internationalization resources JSON_. 
+(the package title says L18n which kind of mixing 2 terms l10n and i18n.)
 
 ##Description
 
