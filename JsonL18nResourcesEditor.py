@@ -99,6 +99,10 @@ class L18ionViewExec( sublime_plugin.TextCommand ):
 			self.open_ml_editor( edit )
 		elif cmd == "add_row":
 			self.add_row( edit )
+		elif cmd == "check_backspace":
+			self.check_backspace( edit )
+		elif cmd == "check_del":
+			self.check_delete( edit )
 
 #TODO: finish adding rows in the middle
 	def add_row( self, edit ):
@@ -126,6 +130,21 @@ class L18ionViewExec( sublime_plugin.TextCommand ):
 			for view in win.views():
 				if win.get_view_index(view)[0] == nextindx:
 					win.focus_view( view )
+
+	def check_backspace(self, edit):
+		colPos = self.view.rowcol(self.view.sel()[0].begin())[1]
+		if colPos >= 1:
+			self.view.run_command( "left_delete" )
+
+	def check_delete(self, edit):
+		currPos = self.view.sel()[0].begin()
+		rowStart = self.view.line(currPos).begin()
+		colPos = rowStart + self.view.rowcol(currPos)[1]
+		rowEnd = self.view.line(currPos).end()
+		print( "colPos=" + str(colPos) + "; rowEnd=" + str(rowEnd) )
+
+		if colPos < rowEnd:
+			self.view.run_command( "right_delete" )
 
 #TODO: finish editing multiline rows
 	def open_ml_editor(self, edit):
