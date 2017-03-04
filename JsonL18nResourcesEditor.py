@@ -1,11 +1,16 @@
 import sublime
 import sublime_plugin
 import json
+import re
 import os
 import fnmatch
 
 def jsonencode(str):
 	return json.dumps(str, sort_keys=False, ensure_ascii=False, indent=4, separators=(',', ': '))
+
+def jsonencodevalue(str):
+	return re.sub(r'^"|"$', '', jsonencode(str))
+
 
 def get_settings():
 	return sublime.load_settings( 'JsonL18nResourcesEditor.sublime-settings' )
@@ -32,7 +37,7 @@ class JSONSaver( sublime_plugin.EventListener ):
 				result = {}
 				for key_indx, key in enumerate(keys):
 					if key_indx < len(lines) and lines[key_indx] and len(key) > 0:
-						result[key] = json.loads(lines[key_indx])
+						result[key] = json.loads('"' + lines[key_indx] + '"')
 				
 				view_i.settings().set( "l18ion_view_content", content )
 				view_i.run_command( 'l18ion_save', { "jsonresult": jsonencode(result) } )
@@ -67,10 +72,10 @@ class L18ionInsetRow( sublime_plugin.TextCommand ):
 		if not self.view.settings().get( 'l18ion_view', False ):
 			return
 
-		isKey = self.view.settings().get( "l18ion_keysview", False )
+		#isKey = self.view.settings().get( "l18ion_keysview", False )
 
 		endOfLine = self.view.line(self.view.text_point(index,0)).end()
-		self.view.insert( edit, endOfLine, "\n" if isKey else '\n""')
+		self.view.insert( edit, endOfLine, "\n")
 
 class L18nUpdateRow( sublime_plugin.TextCommand ):
 	def run( self, edit, value="" ):
@@ -247,7 +252,7 @@ class JsonL18nCommand(sublime_plugin.TextCommand):
 		if indx == 0:
 			content = "\n".join([ str(dict.get(key, "")) for key in keys ])
 		else:
-			content = "\n".join([ jsonencode(dict.get(key, "")) for key in keys ])
+			content = "\n".join([ jsonencodevalue(dict.get(key, "")) for key in keys ])
 
 		view.run_command( 'l18ion_set_view_content', { 'content': content } )
 
