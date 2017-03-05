@@ -4,12 +4,13 @@ import json
 import re
 import os
 import fnmatch
+from collections import OrderedDict
 
 def jsonencode(str):
 	return json.dumps(str, sort_keys=False, ensure_ascii=False, indent=4, separators=(',', ': '))
 
-def jsonencodevalue(str):
-	return re.sub(r'^"|"$', '', jsonencode(str))
+#def jsonencodevalue(str):
+#	return re.sub(r'^"|"$', '', jsonencode(str))
 
 
 def get_settings():
@@ -18,6 +19,10 @@ def get_settings():
 def get_view_content(view):
 	selection = sublime.Region( 0, view.size() )
 	return view.substr( selection )
+
+def set_view_origin_obj(view, obj):
+	view.settings().set("l18ion_origin_object", obj)
+	return obj;
 
 class JSONSaver( sublime_plugin.EventListener ):
 	def on_pre_save(self, view):
@@ -34,10 +39,16 @@ class JSONSaver( sublime_plugin.EventListener ):
 			if view_i.settings().get( "l18ion_keysview", False ):
 				keys = lines
 			elif view_i == view:
-				result = {}
+				result = view_i.settings().get( "l18ion_origin_object", {} )
+
+				for (key, val) in result:
+					if key not in keys:
+						del result[key]
+
 				for key_indx, key in enumerate(keys):
 					if key_indx < len(lines) and lines[key_indx] and len(key) > 0:
-						result[key] = json.loads('"' + lines[key_indx] + '"')
+						result[key] = json.loads(lines[key_indx])
+						#result[key] = json.loads('"' + lines[key_indx] + '"')
 				
 				view_i.settings().set( "l18ion_view_content", content )
 				view_i.run_command( 'l18ion_save', { "jsonresult": jsonencode(result) } )
@@ -100,9 +111,9 @@ class L18ionViewExec( sublime_plugin.TextCommand ):
 		elif cmd == "add_row":
 			self.add_row( edit )
 		elif cmd == "check_backspace":
-			self.check_backspace( edit )
+			self.check_delete( edit, 1, 0, "left_delete" )
 		elif cmd == "check_del":
-			self.check_delete( edit )
+			self.check_delete( edit, 0, 1, "right_delete" )
 
 #TODO: finish adding rows in the middle
 	def add_row( self, edit ):
@@ -131,20 +142,16 @@ class L18ionViewExec( sublime_plugin.TextCommand ):
 				if win.get_view_index(view)[0] == nextindx:
 					win.focus_view( view )
 
-	def check_backspace(self, edit):
-		colPos = self.view.rowcol(self.view.sel()[0].begin())[1]
-		if colPos >= 1:
-			self.view.run_command( "left_delete" )
-
-	def check_delete(self, edit):
+	def check_delete(self, edit, left_offset, right_offset, default_action):
 		currPos = self.view.sel()[0].begin()
 		rowStart = self.view.line(currPos).begin()
-		colPos = rowStart + self.view.rowcol(currPos)[1]
-		rowEnd = self.view.line(currPos).end()
-		print( "colPos=" + str(colPos) + "; rowEnd=" + str(rowEnd) )
+		colPos = self.view.rowcol(currPos)[1]
+		colPosAbs = rowStart + colPos
+		rowEnd = self.view.line(currPos).end() - right_offset
+		#print( "colPos=" + str(colPos) + "; rowEnd=" + str(rowEnd) )
 
-		if colPos < rowEnd:
-			self.view.run_command( "right_delete" )
+		if colPos > left_offset and colPosAbs < rowEnd:
+			self.view.run_command( default_action )
 
 #TODO: finish editing multiline rows
 	def open_ml_editor(self, edit):
@@ -250,14 +257,17 @@ class JsonL18nCommand(sublime_plugin.TextCommand):
 		if isloading:
 			sublime.set_timeout( lambda: self.make_view_content( win, files ), 10 )
 		else:
-			jsons = [ json.loads( get_view_content(view_i) ) for view_i in views if not view_i.settings().get( "l18ion_keysview", False ) ]
+			orderedJSON = json.JSONDecoder(object_pairs_hook=OrderedDict)
+			jsons = [ set_view_origin_obj(view_i, orderedJSON.decode( get_view_content(view_i) )) for view_i in views if not view_i.settings().get( "l18ion_keysview", False ) ]
 			#print( json.JSONEncoder().encode(jsons) )
-			keys = {};
+			keysDict = {};
 			for dict in jsons:
 				for key in dict.keys():
-					keys[key] = key
+					keysDict[key] = key
 
-			self.render_content( win, keys, keys, 0, "Keys" )
+			keys = sorted(keysDict.keys())
+
+			self.render_content( win, keys, keysDict, 0, "Keys" )
 
 			for indx, dict in enumerate(jsons):
 				self.render_content( win, keys, dict, indx+1, files[indx] )
@@ -271,7 +281,7 @@ class JsonL18nCommand(sublime_plugin.TextCommand):
 		if indx == 0:
 			content = "\n".join([ str(dict.get(key, "")) for key in keys ])
 		else:
-			content = "\n".join([ jsonencodevalue(dict.get(key, "")) for key in keys ])
+			content = "\n".join([ jsonencode(dict.get(key, "")) for key in keys ])
 
 		view.run_command( 'l18ion_set_view_content', { 'content': content } )
 
