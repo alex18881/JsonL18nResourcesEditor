@@ -9,10 +9,6 @@ from collections import OrderedDict
 def jsonencode(str):
 	return json.dumps(str, sort_keys=False, ensure_ascii=False, indent=4, separators=(',', ': '))
 
-#def jsonencodevalue(str):
-#	return re.sub(r'^"|"$', '', jsonencode(str))
-
-
 def get_settings():
 	return sublime.load_settings( 'JsonL18nResourcesEditor.sublime-settings' )
 
@@ -20,7 +16,8 @@ def get_view_content(view):
 	selection = sublime.Region( 0, view.size() )
 	return view.substr( selection )
 
-def set_view_origin_obj(view, obj):
+def get_view_origin_obj(view, orderedJSON):
+	obj = orderedJSON.decode( get_view_content(view) )
 	view.settings().set("l18ion_origin_object", obj)
 	return obj;
 
@@ -39,9 +36,9 @@ class JSONSaver( sublime_plugin.EventListener ):
 			if view_i.settings().get( "l18ion_keysview", False ):
 				keys = lines
 			elif view_i == view:
-				result = view_i.settings().get( "l18ion_origin_object", {} )
+				result = view_i.settings().get( "l18ion_origin_object", OrderedDict())
 
-				for (key, val) in result:
+				for key in list(result):
 					if key not in keys:
 						del result[key]
 
@@ -150,8 +147,13 @@ class L18ionViewExec( sublime_plugin.TextCommand ):
 		rowEnd = self.view.line(currPos).end() - right_offset
 		#print( "colPos=" + str(colPos) + "; rowEnd=" + str(rowEnd) )
 
-		if colPos > left_offset and colPosAbs < rowEnd:
-			self.view.run_command( default_action )
+		if self.view.settings().get( 'l18ion_keysview', False ):
+			if (left_offset == 1 and colPos > 0) or (right_offset == 1 and colPosAbs <= rowEnd):
+				self.view.run_command( default_action )
+		else:
+			if colPos > left_offset and colPosAbs < rowEnd:
+				self.view.run_command( default_action )
+
 
 #TODO: finish editing multiline rows
 	def open_ml_editor(self, edit):
@@ -238,8 +240,8 @@ class JsonL18nCommand(sublime_plugin.TextCommand):
 		view.settings().set( "l18ion_keysview", True )
 		newwin.set_view_index( view, 0, 0 )
 
-		for indx,c in enumerate(files):
-			view = newwin.open_file( c )
+		for indx, file_path in enumerate(files):
+			view = newwin.open_file( file_path )
 			newwin.set_view_index( view, indx+1, 0 )
 
 
@@ -258,9 +260,9 @@ class JsonL18nCommand(sublime_plugin.TextCommand):
 			sublime.set_timeout( lambda: self.make_view_content( win, files ), 10 )
 		else:
 			orderedJSON = json.JSONDecoder(object_pairs_hook=OrderedDict)
-			jsons = [ set_view_origin_obj(view_i, orderedJSON.decode( get_view_content(view_i) )) for view_i in views if not view_i.settings().get( "l18ion_keysview", False ) ]
+			jsons = [ get_view_origin_obj(view_i, orderedJSON) for view_i in views if not view_i.settings().get( "l18ion_keysview", False ) ]
 			#print( json.JSONEncoder().encode(jsons) )
-			keysDict = {};
+			keysDict = OrderedDict();
 			for dict in jsons:
 				for key in dict.keys():
 					keysDict[key] = key
