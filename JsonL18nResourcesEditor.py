@@ -38,6 +38,7 @@ class JSONSaver( sublime_plugin.EventListener ):
 			if view_i.settings().get( "l18ion_keysview", False ):
 				keys = lines
 			elif view_i == view:
+				# Correct order of items fix
 				result = orderedJSON.decode(view_i.settings().get( "l18ion_origin_object", "\{\}"))
 
 				for key in list(result):
