@@ -73,6 +73,7 @@ class L18ionSave( sublime_plugin.TextCommand ):
 	def run( self, edit, content='', jsonresult="" ):
 		selection = sublime.Region( 0, self.view.size() )
 		self.view.replace( edit, selection, jsonresult )
+		self.view.settings().set("l18ion_origin_object", jsonresult)
 
 class L18ionVoid( sublime_plugin.TextCommand ):
 	def run( self, edit ):
@@ -246,12 +247,13 @@ class JsonL18nCommand(sublime_plugin.TextCommand):
 
 		view = newwin.new_file( )
 		view.settings().set( "l18ion_keysview", True )
+		view.settings().set( "ensure_newline_at_eof_on_save", False )
 		newwin.set_view_index( view, 0, 0 )
 
 		for indx, file_path in enumerate(files):
 			view = newwin.open_file( file_path )
 			newwin.set_view_index( view, indx+1, 0 )
-
+			view.settings().set( "ensure_newline_at_eof_on_save", False )
 
 		self.make_view_content( newwin, files )
 
