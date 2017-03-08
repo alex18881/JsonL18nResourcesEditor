@@ -38,6 +38,8 @@ Resulting saved files will be pretty-print-formatted.*
 Feel free to post [issues](https://github.com/alex18881/JsonL18nResourcesEditor/issues)
 
 ##Changes
+###1.2.1:
+- bugfix
 
 ###1.2.0:
 
@@ -46,7 +48,7 @@ Feel free to post [issues](https://github.com/alex18881/JsonL18nResourcesEditor/
 - row adding fixed
 
 ###1.1.1:
-- fugfix
+- bugfix
 
 ###1.1.0:
 
