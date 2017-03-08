@@ -24,6 +24,20 @@
 		]
 	},
 	{
+		"keys": ["backspace"], "command": "l18ion_view_exec",
+		"context": [
+			{"key": "setting.l18ion_view", "operand": true}
+		],
+		"args": {"cmd": "check_backspace"}
+	},
+	{
+		"keys": ["delete"], "command": "l18ion_view_exec",
+		"context": [
+			{"key": "setting.l18ion_view", "operand": true}
+		],
+		"args": {"cmd": "check_del"}
+	},
+	{
 		"keys": ["enter"], "command": "l18ion_view_exec",
 		"context": [
 			{"key": "setting.l18ion_view", "operand": true}
