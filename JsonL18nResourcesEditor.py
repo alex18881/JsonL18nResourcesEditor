@@ -17,9 +17,9 @@ def get_view_content(view):
 	return view.substr( selection )
 
 def get_view_origin_obj(view, orderedJSON):
-	obj = orderedJSON.decode( get_view_content(view) )
-	view.settings().set("l18ion_origin_object", obj)
-	return obj;
+	str = get_view_content(view)
+	view.settings().set("l18ion_origin_object", str)
+	return orderedJSON.decode(str)
 
 class JSONSaver( sublime_plugin.EventListener ):
 	def on_pre_save(self, view):
@@ -29,6 +29,8 @@ class JSONSaver( sublime_plugin.EventListener ):
 		win = view.window()
 		views = win.views()
 		keys  = []
+		orderedJSON = json.JSONDecoder(object_pairs_hook=OrderedDict)
+
 		for indx, view_i in enumerate(views):
 			content = get_view_content( view_i )
 			lines = content.splitlines()
@@ -36,7 +38,7 @@ class JSONSaver( sublime_plugin.EventListener ):
 			if view_i.settings().get( "l18ion_keysview", False ):
 				keys = lines
 			elif view_i == view:
-				result = view_i.settings().get( "l18ion_origin_object", OrderedDict())
+				result = orderedJSON.decode(view_i.settings().get( "l18ion_origin_object", "\{\}"))
 
 				for key in list(result):
 					if key not in keys:
@@ -138,6 +140,11 @@ class L18ionViewExec( sublime_plugin.TextCommand ):
 			for view in win.views():
 				if win.get_view_index(view)[0] == nextindx:
 					win.focus_view( view )
+					colPos = view.rowcol(view.sel()[0].begin())[1]
+
+					if colPos == 0 and not view.settings().get( 'l18ion_keysview', False ):
+						view.run_command( 'move', {"by": "characters", "forward": True} )
+
 
 	def check_delete(self, edit, left_offset, right_offset, default_action):
 		currPos = self.view.sel()[0].begin()
