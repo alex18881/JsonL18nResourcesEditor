@@ -7,7 +7,10 @@ import fnmatch
 from collections import OrderedDict
 
 def jsonencode(str):
-	return json.dumps(str, sort_keys=False, ensure_ascii=False, indent=4, separators=(',', ': '))
+	return jsonencode_with_indent(str, 4)
+
+def jsonencode_with_indent(str, _indent):
+	return json.dumps(str, sort_keys=False, ensure_ascii=False, indent=_indent, separators=(',', ': '))
 
 def get_settings():
 	return sublime.load_settings( 'JsonL18nResourcesEditor.sublime-settings' )
@@ -20,6 +23,17 @@ def get_view_origin_obj(view, orderedJSON):
 	str = get_view_content(view)
 	view.settings().set("l18ion_origin_object", str)
 	return orderedJSON.decode(str)
+
+def add_new_line(str_in, nl_type="system"):
+	line_end = '\n'
+	# if nl_type == "system":
+	# 	line_end = os.linesep
+	# elif nl_type == "windows":
+	# 	line_end = '\r\n'
+	# elif nl_type == "unix":
+	# 	line_end = '\n'
+
+	return str_in + line_end
 
 class JSONSaver( sublime_plugin.EventListener ):
 	def on_pre_save(self, view):
@@ -50,9 +64,15 @@ class JSONSaver( sublime_plugin.EventListener ):
 						result[key] = json.loads(lines[key_indx])
 						#result[key] = json.loads('"' + lines[key_indx] + '"')
 				
+				indent = view_i.settings().get('tab_size', 4)
+				if not view_i.settings().get( "translate_tabs_to_spaces", False):
+					indent = '\t'
+				
+				view_i.settings().erase( "ensure_newline_at_eof_on_save")
 				view_i.settings().set( "l18ion_view_content", content )
-				view_i.run_command( 'l18ion_save', { "jsonresult": jsonencode(result) } )
-		return False
+				view_i.run_command( 'l18ion_save', { "jsonresult": jsonencode_with_indent(result, indent) } )
+
+		return
 
 	def on_post_save(self, view):
 		if not view.settings().get( 'l18ion_view', False ) or not view.settings().has( "l18ion_view_content" ):
@@ -60,6 +80,7 @@ class JSONSaver( sublime_plugin.EventListener ):
 
 		content = view.settings().get( "l18ion_view_content", "" )
 		view.settings().erase( "l18ion_view_content" )
+		view.settings().set( "ensure_newline_at_eof_on_save", False)
 		view.settings().set( 'l18ion_view', True )
 		view.run_command( "l18ion_set_view_content", { "content": content } )
 
@@ -71,6 +92,9 @@ class L18ionSetViewContent( sublime_plugin.TextCommand ):
 
 class L18ionSave( sublime_plugin.TextCommand ):
 	def run( self, edit, content='', jsonresult="" ):
+		if self.view.settings().get( "ensure_newline_at_eof_on_save", False):
+			jsonresult = add_new_line(jsonresult, self.view.settings().get( "default_line_ending", "system"))
+
 		selection = sublime.Region( 0, self.view.size() )
 		self.view.replace( edit, selection, jsonresult )
 		self.view.settings().set("l18ion_origin_object", jsonresult)
@@ -84,10 +108,10 @@ class L18ionInsetRow( sublime_plugin.TextCommand ):
 		if not self.view.settings().get( 'l18ion_view', False ):
 			return
 
-		#isKey = self.view.settings().get( "l18ion_keysview", False )
+		isKey = self.view.settings().get( "l18ion_keysview", False )
 
 		endOfLine = self.view.line(self.view.text_point(index,0)).end()
-		self.view.insert( edit, endOfLine, "\n")
+		self.view.insert( edit, endOfLine, "\n" if isKey else '\n""')
 
 class L18nUpdateRow( sublime_plugin.TextCommand ):
 	def run( self, edit, value="" ):
@@ -247,13 +271,13 @@ class JsonL18nCommand(sublime_plugin.TextCommand):
 
 		view = newwin.new_file( )
 		view.settings().set( "l18ion_keysview", True )
-		view.settings().set( "ensure_newline_at_eof_on_save", False )
+		view.settings().set( "ensure_newline_at_eof_on_save", False)
 		newwin.set_view_index( view, 0, 0 )
 
 		for indx, file_path in enumerate(files):
 			view = newwin.open_file( file_path )
+			view.settings().set( "ensure_newline_at_eof_on_save", False)
 			newwin.set_view_index( view, indx+1, 0 )
-			view.settings().set( "ensure_newline_at_eof_on_save", False )
 
 		self.make_view_content( newwin, files )
 
