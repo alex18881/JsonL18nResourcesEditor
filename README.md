@@ -1,8 +1,8 @@
-#Json L18n Resources Editor
+# Json L18n Resources Editor
 _Sublime Text 3 plugin for editing localization internationalization resources JSON_. 
 (the package title says L18n which kind of mixing 2 terms l10n and i18n.)
 
-##Description
+## Description
 
 This package allows to edit localization/internationalization resources stored in JSON files. For example:
 resources.json
@@ -11,12 +11,12 @@ resources.en-gb.json
 
 ![Editor window](http://i.imgur.com/eYPSpFw.png)
 
-##Installation
+## Installation
 
   - Using [Package Control](https://packagecontrol.io/) Ctrl+Shift+P -> "Install Package" then type JsonL18nResourcesEditor and press enter
   - Clone the [repository](https://github.com/alex18881/JsonL18nResourcesEditor) or download ZIP and extract to the JsonL18nResourcesEditor directory in your Sublime 'Packages' folder ( menu "Preferences"->"Browse Packages" )
 
-##Usage
+## Usage
 
 ![Sidebar context menu](http://i.imgur.com/tfF6IOR.png)
 ![Tab context menu](http://i.imgur.com/CMJD4Cr.png)
@@ -33,29 +33,26 @@ If you need to make a multiline string which should contain "\n" symbols just pr
 *Note that each value should be a proper single line JSON string. All special chars must be escaped.
 Resulting saved files will be pretty-print-formatted.*
 
-##P.S.
+## P.S.
 
 Feel free to post [issues](https://github.com/alex18881/JsonL18nResourcesEditor/issues)
 
-##Changes
-###1.2.1 - 1.2.3:
+## Changes
+### 1.2.1 - 1.2.3:
 - bugfix
 
-###1.2.0:
-
+### 1.2.0:
 - added jump to next lang resource by tab press and previous by shift+tab
 - added multiline strings editing by CTRL+Enter
 - row adding fixed
 
-###1.1.1:
+### 1.1.1:
 - bugfix
 
-###1.1.0:
-
+### 1.1.0:
 - added settings
 - added tab content command
 
-###1.0.0:
-
+### 1.0.0:
 - fixed new row creation
 - fixed small bugs
